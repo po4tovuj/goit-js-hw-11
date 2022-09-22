@@ -1,5 +1,3 @@
-import './css/styles.css';
-import './css/country.scss';
 import {
   fetchCountries,
   parseCountries,
@@ -7,7 +5,7 @@ import {
 } from './js/fetchCountries';
 import debounce from 'lodash.debounce';
 import { Notify } from 'notiflix';
-
+import './css/country.scss';
 const DEBOUNCE_DELAY = 300;
 const searchInput = document.querySelector('#search-box');
 const options = {
