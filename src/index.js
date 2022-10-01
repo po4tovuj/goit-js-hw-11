@@ -88,7 +88,6 @@ const debounced = debounce(async () => {
     })
       .then(result => {
         const photoListParsed = parsePhoto(result);
-
         galleryWrapper.insertAdjacentHTML('beforeEnd', photoListParsed);
         lightBox.refresh();
         const { height: cardHeight } = document
