@@ -1,0 +1,13 @@
+.header {
+  background-color: blueviolet;
+  text-align: center;
+  height: 75px;
+  padding: 20px 0;
+  .search-input {
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 3px;
+    border: none;
+    margin-right: 20px;
+  }
+}
