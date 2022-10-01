@@ -98,7 +98,7 @@ const debounced = debounce(async () => {
           top: cardHeight * 2,
           behavior: 'smooth',
         });
-        return photoList;
+        return photoListParsed;
       })
       .catch(err => {
         const message = err.message;
