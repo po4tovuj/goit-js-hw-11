@@ -10,7 +10,7 @@ const defaultUrlParams = new URLSearchParams([
   }),
 ]).toString();
 
-const getImages = ({ query, page, per_page }) => {
+export const getImages = ({ query, page, per_page }) => {
   // debugger;
   const urlParams = new URLSearchParams([
     ['key', API_KEY],
@@ -24,21 +24,3 @@ const getImages = ({ query, page, per_page }) => {
       return result.data;
     });
 };
-const loadMore = ({ page, query, per_page }) => {
-  const urlParams = new URLSearchParams([
-    ['key', API_KEY],
-    ['q', query],
-    ['page', page],
-    ['per_page', per_page],
-  ]).toString();
-
-  return axios
-    .get(`${BASE_URL}?${urlParams}&${defaultUrlParams}`)
-    .then(result => {
-      const {
-        data: { hits },
-      } = result;
-      return hits;
-    });
-};
-export { loadMore, getImages };

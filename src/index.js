@@ -1,4 +1,4 @@
-import { getImages, loadMore } from './js/imagesApi';
+import { getImages } from './js/imagesApi';
 import { Notify } from 'notiflix';
 import { parsePhoto } from './js/parsePhotoTotemplate';
 import SimpleLightbox from 'simplelightbox';
@@ -9,7 +9,7 @@ let per_page = 40;
 
 let totalPages = 1;
 let searchQuery = '';
-
+let pageIsLoaded = false;
 const formElement = document.querySelector('#search-form');
 const galleryWrapper = document.querySelector('.gallery');
 
@@ -18,7 +18,8 @@ const options = {
   fontSize: '20px',
   width: 'fit-content',
 };
-
+const getLastElement = () =>
+  document.querySelector('.gallery > .photo-card:last-child');
 formElement.addEventListener('submit', handleSubmit);
 let lightBox = null;
 async function handleSubmit(e) {
@@ -54,40 +55,28 @@ async function handleSubmit(e) {
   lightBox = new SimpleLightbox('.gallery div', {
     sourceAttr: 'data-large',
   });
+  obseveLastUser();
 }
 
-const debounced = debounce(async () => {
-  const currentScrollPosition =
-    Math.ceil(galleryWrapper.scrollTop) + galleryWrapper.clientHeight;
-  const maxScrollHeight = galleryWrapper.scrollHeight;
-  // early exit
-  if (
-    !(currentScrollPosition >= maxScrollHeight) ||
-    (page === 1 && page === totalPages)
-  ) {
-    // go next only if we are on the very bottom
-    //no sense to show something if its only one page
-    return;
-  }
-
+const loadMore = () => {
   // if we reach max results
   if (page === totalPages) {
     Notify.failure(
       "We're sorry, but you've reached the end of search results.",
       options
     );
-    return;
+    return Promise.reject();
   }
 
-  {
-    page++;
-    const photoList = await loadMore({
+  page++;
+  return new Promise((resolve, reject) => {
+    getImages({
       page,
       query: searchQuery,
       per_page,
     })
-      .then(result => {
-        const photoListParsed = parsePhoto(result);
+      .then(({ hits }) => {
+        const photoListParsed = parsePhoto(hits);
         galleryWrapper.insertAdjacentHTML('beforeEnd', photoListParsed);
         lightBox.refresh();
         const { height: cardHeight } = document
@@ -97,12 +86,78 @@ const debounced = debounce(async () => {
           top: cardHeight * 2,
           behavior: 'smooth',
         });
-        return photoListParsed;
+        resolve();
       })
       .catch(err => {
         const message = err.message;
-        return Notify.failure(message, options);
+        Notify.failure(message, options);
+        reject();
       });
-  }
-}, 300);
-galleryWrapper.addEventListener('scroll', debounced);
+  });
+};
+const infScrollCallback = (entries, observer) => {
+  const entry = entries[0];
+  if (!entry.isIntersecting) return;
+
+  loadMore()
+    .then(resp => {
+      obseveLastUser();
+    })
+    .catch(error => {});
+  observer.unobserve(entry.target);
+};
+const infScrollObserver = new IntersectionObserver(infScrollCallback, {});
+
+const obseveLastUser = () => {
+  infScrollObserver.observe(getLastElement());
+};
+// const debounced = debounce(async () => {
+//   const currentScrollPosition =
+//     Math.ceil(galleryWrapper.scrollTop) + galleryWrapper.clientHeight;
+//   const maxScrollHeight = galleryWrapper.scrollHeight;
+//   // early exit
+//   if (
+//     !(currentScrollPosition >= maxScrollHeight) ||
+//     (page === 1 && page === totalPages)
+//   ) {
+//     // go next only if we are on the very bottom
+//     //no sense to show something if its only one page
+//     return;
+//   }
+
+//   // if we reach max results
+//   if (page === totalPages) {
+//     Notify.failure(
+//       "We're sorry, but you've reached the end of search results.",
+//       options
+//     );
+//     return;
+//   }
+
+//   {
+//     page++;
+//     const photoList = await getImages({
+//       page,
+//       query: searchQuery,
+//       per_page,
+//     })
+//       .then(({hits}) => {
+//         const photoListParsed = parsePhoto(hits);
+//         galleryWrapper.insertAdjacentHTML('beforeEnd', photoListParsed);
+//         lightBox.refresh();
+//         const { height: cardHeight } = document
+//           .querySelector('.gallery')
+//           .firstElementChild.getBoundingClientRect();
+//         galleryWrapper.scrollBy({
+//           top: cardHeight * 2,
+//           behavior: 'smooth',
+//         });
+//         return photoListParsed;
+//       })
+//       .catch(err => {
+//         const message = err.message;
+//         return Notify.failure(message, options);
+//       });
+//   }
+// }, 300);
+// galleryWrapper.addEventListener('scroll', debounced);
